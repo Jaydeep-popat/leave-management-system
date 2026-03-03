@@ -1,0 +1,111 @@
+import { useContext, useEffect, useState } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import api from '../api/axios';
+
+export default function Dashboard() {
+  const { user } = useContext(AuthContext);
+  const [balances, setBalances] = useState([]);
+  const [recentLeaves, setRecentLeaves] = useState([]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      // API call to leave balances might exist, fallback to static if not
+      const balRes = await api.get('/leave-balances').catch(() => ({ data: { data: { balances: [] } } }));
+      const reqRes = await api.get('/leave-requests/my').catch(() => ({ data: { data: { leaves: [] } } }));
+      
+      setBalances(balRes.data?.data?.balances || []);
+      setRecentLeaves(reqRes.data?.data?.leaveRequests || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+        <div>
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2">Welcome back, {user?.name.split(' ')[0]}! 👋</h2>
+          <p className="text-slate-600 dark:text-slate-400 text-lg">Manage your time off and track your balance efficiently.</p>
+        </div>
+        <div className="flex gap-3">
+          <button className="inline-flex items-center justify-center h-12 px-6 rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-200">
+            <span className="material-symbols-outlined mr-2 text-[20px]">calendar_month</span>
+            <span>View Calendar</span>
+          </button>
+          <button className="inline-flex items-center justify-center h-12 px-6 rounded-xl bg-primary text-white font-medium shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all active:scale-[0.98]">
+            <span className="material-symbols-outlined mr-2 text-[20px]">add_circle</span>
+            <span>Quick Apply</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        {['Annual Leave', 'Sick Leave', 'Casual Leave', 'Unpaid Leave'].map((type, idx) => (
+          <div key={idx} className="group relative bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+            <div className={`absolute top-6 right-6 p-2 rounded-lg 
+              ${idx===0 ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' :
+                idx===1 ? 'bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400' :
+                idx===2 ? 'bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400' :
+                'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'}`}>
+              <span className="material-symbols-outlined text-2xl">{['beach_access','medical_services','event_available','hourglass_bottom'][idx]}</span>
+            </div>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">{type}</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-slate-900 dark:text-white">{idx===3 ? 0 : 12-idx*3}</span>
+              <span className="text-sm font-medium text-slate-500">days available</span>
+            </div>
+            <div className="mt-4 w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+              <div className={`h-1.5 rounded-full ${idx===0?'bg-blue-500':idx===1?'bg-rose-500':idx===2?'bg-purple-500':'bg-emerald-500'}`} style={{ width: `${(idx===3 ? 0 : (12-idx*3)/20)*100}%` }}></div>
+            </div>
+            <p className="text-xs text-slate-400 mt-2">Total 20 days/year</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 sm:p-8">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Recent Activity</h3>
+            <a href="#" className="text-sm font-medium text-primary hover:text-primary/80">View all history</a>
+          </div>
+          
+          <div className="relative pl-4 sm:pl-6 border-l-2 border-slate-100 dark:border-slate-700 space-y-10">
+            {recentLeaves.length === 0 ? (
+              <p className="text-slate-500 text-sm">No recent leaves applied.</p>
+            ) : (
+              recentLeaves.map((request) => (
+                <div key={request._id} className="relative">
+                  <span className={`absolute -left-[31px] sm:-left-[39px] flex h-8 w-8 items-center justify-center rounded-full ring-4 ring-white dark:ring-slate-800 
+                    ${request.status === 'approved' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
+                      request.status === 'rejected' ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' :
+                      'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'}`}>
+                    <span className="material-symbols-outlined text-lg">
+                      {request.status === 'approved' ? 'check_circle' : request.status === 'rejected' ? 'cancel' : 'hourglass_empty'}
+                    </span>
+                  </span>
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1">
+                    <div>
+                      <h4 className="text-base font-semibold text-slate-900 dark:text-white capitalize">{request.leaveType?.name || 'Leave'} Request</h4>
+                      <p className="text-sm text-slate-500 mt-1 capitalize">{request.status}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-400">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="material-symbols-outlined text-base text-slate-400">calendar_today</span>
+                      <span>{new Date(request.fromDate).toLocaleDateString()} - {new Date(request.toDate).toLocaleDateString()} ({request.totalDays} days)</span>
+                    </div>
+                    <p className="text-xs text-slate-400">Reason: {request.reason}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

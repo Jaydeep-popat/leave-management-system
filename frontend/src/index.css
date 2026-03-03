@@ -1,0 +1,21 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/forms";
+@plugin "@tailwindcss/container-queries";
+
+@theme {
+  --color-primary: #308ce8;
+  --color-background-light: #f6f7f8;
+  --color-background-dark: #111921;
+
+  --font-display: "Inter", sans-serif;
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+}
+
+@layer base {
+  body {
+    @apply bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen antialiased;
+  }
+}
