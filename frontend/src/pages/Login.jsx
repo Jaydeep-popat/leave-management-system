@@ -21,8 +21,9 @@ export default function Login() {
   };
 
   return (
-    <div className="w-full max-w-4xl bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden flex flex-col md:flex-row">
-      <div className="hidden md:flex md:w-5/12 bg-primary/10 relative items-center justify-center p-8">
+    <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark p-4 sm:p-8">
+      <div className="w-full max-w-4xl bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden flex flex-col md:flex-row">
+        <div className="hidden md:flex md:w-5/12 bg-primary/10 relative items-center justify-center p-8">
         <div className="absolute inset-0 bg-cover bg-center opacity-50 dark:opacity-20 bg-[url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop')]"></div>
         <div className="relative z-10 text-center">
           <span className="material-symbols-outlined text-primary text-6xl mb-4">account_circle</span>
@@ -69,6 +70,7 @@ export default function Login() {
           </p>
         </div>
       </div>
+    </div>
     </div>
   );
 }

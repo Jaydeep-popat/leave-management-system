@@ -16,11 +16,13 @@ import {
 
 const router = Router();
 
-// All department routes require authentication
+// ─── Public Route ─────────────────────────────────────────────────────────────
+router.route("/").get(getAllDepartments);
+
+// All other department routes require authentication
 router.use(verifyJWT);
 
 // ─── Any Authenticated User ────────────────────────────────────────────────────
-router.route("/").get(getAllDepartments);
 router.route("/:id").get(validateMongoIdParam, validate, getDepartmentById);
 
 // ─── Admin / HR Only ───────────────────────────────────────────────────────────
