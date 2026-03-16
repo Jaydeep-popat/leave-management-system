@@ -7,7 +7,7 @@ const ENV_DEFAULTS = {
     PORT: "8000",
     ACCESS_TOKEN_EXPIRY: "1d",
     REFRESH_TOKEN_EXPIRY: "10d",
-    CORS_ORIGIN: "http://localhost:4200",
+    CORS_ORIGIN: "http://localhost:5173",
     NODE_ENV: "development",
 };
 

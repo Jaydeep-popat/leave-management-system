@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import api from '../api/axios';
 
 export const AuthContext = createContext();
@@ -29,6 +30,7 @@ export const AuthProvider = ({ children }) => {
     const { data } = await api.post('/users/login', { email, password });
     if (data.success) {
       setUser(data.data.user);
+      toast.success(`Welcome back, ${data.data.user.name}!`);
     }
     return data;
   };
@@ -41,6 +43,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await api.post('/users/logout');
+      toast.success('Logged out successfully');
     } finally {
       setUser(null);
     }

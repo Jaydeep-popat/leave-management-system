@@ -1,6 +1,7 @@
 import { useState, useContext, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 import api from '../api/axios';
 
 export default function Register() {
@@ -29,9 +30,12 @@ export default function Register() {
     setError('');
     try {
       await registerUser(formData);
+      toast.success('Registration successful! Please login.');
       navigate('/login');
     } catch (err) {
-      setError(err.response?.data?.message || err.response?.data?.errors?.[0] || 'Registration failed');
+      const errorMsg = err.response?.data?.message || err.response?.data?.errors?.[0] || 'Registration failed';
+      setError(errorMsg);
+      toast.error(errorMsg);
     }
   };
 

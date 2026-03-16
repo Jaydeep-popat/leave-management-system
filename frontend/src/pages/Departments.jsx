@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import api from '../api/axios';
 
 export default function Departments() {
@@ -15,7 +16,8 @@ export default function Departments() {
   const fetchDepartments = async () => {
     try {
       const { data } = await api.get('/departments');
-      setDepartments(data.data?.departments || data.data || []);
+      // Backend returns array directly in data property
+      setDepartments(data.data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -28,15 +30,17 @@ export default function Departments() {
     try {
       if (isEditing) {
         await api.patch(`/departments/${isEditing}`, formData);
+        toast.success('Department updated successfully');
       } else {
         await api.post('/departments', formData);
+        toast.success('Department created successfully');
       }
       setShowMod(false);
       setIsEditing(null);
       setFormData({ name: '', description: '' });
       fetchDepartments();
     } catch (err) {
-      alert(err.response?.data?.message || err.response?.data?.errors?.[0] || 'Error saving department');
+      toast.error(err.response?.data?.message || err.response?.data?.errors?.[0] || 'Error saving department');
     }
   };
 
@@ -50,9 +54,10 @@ export default function Departments() {
     if (!confirm("Are you sure you want to delete this department?")) return;
     try {
       await api.delete(`/departments/${id}`);
+      toast.success('Department deleted successfully');
       fetchDepartments();
     } catch (err) {
-      alert(err.response?.data?.message || err.response?.data?.errors?.[0] || 'Error deleting. Ensure no users are assigned.');
+      toast.error(err.response?.data?.message || err.response?.data?.errors?.[0] || 'Error deleting. Ensure no users are assigned.');
     }
   };
 

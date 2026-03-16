@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import api from '../api/axios';
 
 export default function LeaveBalances() {
@@ -16,7 +17,8 @@ export default function LeaveBalances() {
   const fetchBalances = async () => {
     try {
       const { data } = await api.get('/leave-balances');
-      setBalances(data.data?.balances || data.data || []);
+      // Backend returns paginated response: { balances: [...], pagination: {...} }
+      setBalances(data.data?.balances || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -28,20 +30,25 @@ export default function LeaveBalances() {
     try {
       const userRes = await api.get('/users?limit=100');
       const typeRes = await api.get('/leave-types');
+      // Users endpoint returns paginated: { users: [...], pagination: {...} }
+      // Leave types returns array directly
       setUsers(userRes.data?.data?.users || []);
-      setLeaveTypes(typeRes.data?.data?.leaveTypes || typeRes.data?.data || []);
+      setLeaveTypes(typeRes.data?.data || []);
     } catch (err) {}
   };
 
   const handleBulkAllocate = async (e) => {
     e.preventDefault();
     try {
-      if(!formData.user) return alert("Select user");
+      if(!formData.user) {
+        toast.error('Please select a user');
+        return;
+      }
       await api.post('/leave-balances/bulk', { user: formData.user, year: formData.year });
-      alert("Bulk allocation successful!");
+      toast.success('Bulk allocation successful!');
       fetchBalances();
     } catch (err) {
-      alert(err.response?.data?.message || 'Error occurred');
+      toast.error(err.response?.data?.message || 'Error occurred');
     }
   };
 

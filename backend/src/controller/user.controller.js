@@ -2,6 +2,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import User from "../model/User.js";
+import LeaveType from "../model/LeaveType.js";
+import LeaveBalance from "../model/LeaveBalance.js";
 import jwt from "jsonwebtoken";
 
 // ─── Cookie Options ────────────────────────────────────────────────────────────
@@ -59,6 +61,35 @@ const registerUser = asyncHandler(async (req, res) => {
         department,
         designation,
     });
+
+    // Initialize leave balances for the current year for all active leave types
+    // so newly registered users can apply leave immediately.
+    try {
+        const currentYear = new Date().getFullYear();
+        const activeLeaveTypes = await LeaveType.find({ isActive: true }).select(
+            "_id maxDaysPerYear"
+        );
+
+        if (activeLeaveTypes.length > 0) {
+            const initialBalances = activeLeaveTypes.map((lt) => ({
+                user: user._id,
+                leaveType: lt._id,
+                year: currentYear,
+                totalAllocated: lt.maxDaysPerYear,
+                used: 0,
+                remaining: lt.maxDaysPerYear,
+            }));
+
+            await LeaveBalance.insertMany(initialBalances);
+        }
+    } catch {
+        // Compensating action to avoid creating users without initialized balances.
+        await User.findByIdAndDelete(user._id);
+        throw new ApiError(
+            500,
+            "Unable to initialize leave balances for this user. Please try again."
+        );
+    }
 
     const createdUser = await User.findById(user._id).select(
         "-password -refreshToken"

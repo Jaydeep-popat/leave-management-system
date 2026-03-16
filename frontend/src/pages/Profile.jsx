@@ -1,5 +1,6 @@
 import { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 import api from '../api/axios';
 
 export default function Profile() {
@@ -13,9 +14,9 @@ export default function Profile() {
     e.preventDefault();
     try {
       await api.patch('/users/update', details);
-      alert('Details updated successfully. Reload to see changes.');
+      toast.success('Details updated successfully. Please refresh to see changes.');
     } catch (err) {
-      alert(err.response?.data?.message || 'Error updating details');
+      toast.error(err.response?.data?.message || 'Error updating details');
     }
   };
 
@@ -24,9 +25,9 @@ export default function Profile() {
     try {
       await api.patch('/users/change-password', passwords);
       setPasswords({ oldPassword: '', newPassword: '' });
-      alert('Password updated successfully');
+      toast.success('Password updated successfully');
     } catch (err) {
-      alert(err.response?.data?.message || err.response?.data?.errors?.[0] || 'Error changing password');
+      toast.error(err.response?.data?.message || err.response?.data?.errors?.[0] || 'Error changing password');
     }
   };
 

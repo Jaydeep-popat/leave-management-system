@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import api from '../api/axios';
 
 export default function TeamLeaves() {
@@ -34,9 +35,10 @@ export default function TeamLeaves() {
         payload = { rejectionReason: reason };
       }
       await api.patch(`/leave-requests/${id}/${action}`, payload);
+      toast.success(`Leave request ${action}d successfully`);
       fetchTeamLeaves();
     } catch (err) {
-      alert(err.response?.data?.message || err.response?.data?.errors?.[0] || 'Error processing request');
+      toast.error(err.response?.data?.message || err.response?.data?.errors?.[0] || 'Error processing request');
     } finally {
       setActioningId(null);
     }

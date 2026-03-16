@@ -1,5 +1,6 @@
 import { useContext } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
@@ -23,6 +24,25 @@ const ProtectedRoute = ({ children }) => {
 export default function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-right" toastOptions={{
+        duration: 3000,
+        style: {
+          background: '#363636',
+          color: '#fff',
+        },
+        success: {
+          iconTheme: {
+            primary: '#4ade80',
+            secondary: '#fff',
+          },
+        },
+        error: {
+          iconTheme: {
+            primary: '#ef4444',
+            secondary: '#fff',
+          },
+        },
+      }} />
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />

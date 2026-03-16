@@ -42,6 +42,9 @@ const applyLeave = asyncHandler(async (req, res) => {
     if (to < from) {
         throw new ApiError(400, "toDate must be greater than or equal to fromDate");
     }
+    if (from.getFullYear() !== to.getFullYear()) {
+        throw new ApiError(400, "Leave request cannot span multiple calendar years");
+    }
 
     // Verify the leave type exists and is active
     const leaveTypeDoc = await LeaveType.findById(leaveType);
@@ -53,20 +56,17 @@ const applyLeave = asyncHandler(async (req, res) => {
     }
 
     const totalDays = calculateTotalDays(from, to);
-    const currentYear = new Date().getFullYear();
+    const requestYear = from.getFullYear();
 
     // Check leave balance
     const balance = await LeaveBalance.findOne({
         user: req.user._id,
         leaveType,
-        year: currentYear,
+        year: requestYear,
     });
 
     if (!balance) {
-        throw new ApiError(
-            400,
-            "No leave balance allocated for this leave type in the current year"
-        );
+        throw new ApiError(400, `No leave balance allocated for this leave type in year ${requestYear}`);
     }
     if (balance.remaining < totalDays) {
         throw new ApiError(

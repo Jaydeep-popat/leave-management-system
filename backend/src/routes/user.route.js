@@ -40,4 +40,3 @@ router
     .patch(verifyJWT, authorizeRoles("admin"), validateUpdateUserStatus, validate, updateUserStatus);
 
 export default router;
-

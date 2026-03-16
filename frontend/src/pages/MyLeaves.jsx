@@ -1,22 +1,43 @@
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import api from '../api/axios';
 
 export default function MyLeaves() {
   const [leaves, setLeaves] = useState([]);
   const [leaveTypes, setLeaveTypes] = useState([]);
+  const [leaveBalances, setLeaveBalances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showApplyMod, setShowApplyMod] = useState(false);
   const [formData, setFormData] = useState({ leaveType: '', fromDate: '', toDate: '', reason: '' });
+  const selectedYear = formData.fromDate
+    ? new Date(formData.fromDate).getFullYear()
+    : new Date().getFullYear();
+
+  const leaveTypeIdsWithBalance = new Set(
+    (leaveBalances || [])
+      .filter((b) => b?.remaining > 0 && b?.leaveType?._id)
+      .map((b) => b.leaveType._id)
+  );
+
+  const selectableLeaveTypes = Array.isArray(leaveTypes)
+    ? leaveTypes.filter((lt) => leaveTypeIdsWithBalance.has(lt._id))
+    : [];
 
   useEffect(() => {
     fetchMyLeaves();
     fetchLeaveTypes();
   }, []);
 
+  useEffect(() => {
+    if (!showApplyMod) return;
+    fetchMyLeaveBalances(selectedYear);
+  }, [showApplyMod, selectedYear]);
+
   const fetchMyLeaves = async () => {
     try {
       const { data } = await api.get('/leave-requests/my');
-      setLeaves(data.data?.leaveRequests || data.data?.requests || []);
+      // Backend returns paginated: { requests: [...], pagination: {...} }
+      setLeaves(data.data?.requests || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -27,18 +48,38 @@ export default function MyLeaves() {
   const fetchLeaveTypes = async () => {
     try {
       const { data } = await api.get('/leave-types');
-      setLeaveTypes(data.data?.leaveTypes || data.data || []);
-    } catch (err) {}
+      // Backend returns array directly
+      setLeaveTypes(data.data || []);
+    } catch {
+      setLeaveTypes([]);
+    }
+  };
+
+  const fetchMyLeaveBalances = async (year) => {
+    try {
+      const { data } = await api.get(`/leave-balances/my?year=${year}`);
+      setLeaveBalances(data.data || []);
+    } catch {
+      setLeaveBalances([]);
+    }
   };
 
   const handleApply = async (e) => {
     e.preventDefault();
+
+    if (!leaveTypeIdsWithBalance.has(formData.leaveType)) {
+      toast.error(`No leave balance allocated for selected leave type in year ${selectedYear}`);
+      return;
+    }
+
     try {
       await api.post('/leave-requests/apply', formData);
+      toast.success('Leave application submitted successfully');
       setShowApplyMod(false);
+      setFormData({ leaveType: '', fromDate: '', toDate: '', reason: '' });
       fetchMyLeaves();
     } catch (err) {
-      alert(err.response?.data?.message || err.response?.data?.errors?.[0] || 'Error applying');
+      toast.error(err.response?.data?.message || err.response?.data?.errors?.[0] || 'Error applying');
     }
   };
 
@@ -46,9 +87,10 @@ export default function MyLeaves() {
     if(!confirm("Are you sure you want to cancel this leave?")) return;
     try {
       await api.patch(`/leave-requests/${id}/cancel`);
+      toast.success('Leave request cancelled successfully');
       fetchMyLeaves();
     } catch (err) {
-      alert(err.response?.data?.message || 'Error occurred');
+      toast.error(err.response?.data?.message || 'Error occurred');
     }
   };
 
@@ -71,10 +113,12 @@ export default function MyLeaves() {
             <label className="flex flex-col">
               <span className="text-sm">Leave Type</span>
               <select required className="form-select rounded mt-1 dark:bg-slate-700 disabled:opacity-50"
+                value={formData.leaveType}
                 onChange={e => setFormData({...formData, leaveType: e.target.value})}
+                disabled={selectableLeaveTypes.length === 0}
               >
-                <option value="">Select Type</option>
-                {Array.isArray(leaveTypes) && leaveTypes.map(lt => (
+                <option value="">{selectableLeaveTypes.length === 0 ? 'No balance allocated' : 'Select Type'}</option>
+                {selectableLeaveTypes.map(lt => (
                   <option key={lt._id} value={lt._id}>{lt.name}</option>
                 ))}
               </select>
@@ -83,20 +127,28 @@ export default function MyLeaves() {
               <label className="flex flex-col">
                 <span className="text-sm">From Date</span>
                 <input required type="date" className="form-input rounded mt-1 dark:bg-slate-700"
-                  onChange={e => setFormData({...formData, fromDate: e.target.value})} />
+                  value={formData.fromDate}
+                  onChange={e => setFormData({...formData, fromDate: e.target.value, leaveType: ''})} />
               </label>
               <label className="flex flex-col">
                 <span className="text-sm">To Date</span>
                 <input required type="date" className="form-input rounded mt-1 dark:bg-slate-700" 
+                  value={formData.toDate}
                   onChange={e => setFormData({...formData, toDate: e.target.value})} />
               </label>
             </div>
             <label className="flex flex-col">
               <span className="text-sm">Reason</span>
               <textarea required rows="3" className="form-textarea rounded mt-1 dark:bg-slate-700"
+                value={formData.reason}
                 onChange={e => setFormData({...formData, reason: e.target.value})} />
             </label>
-            <button type="submit" className="w-full bg-primary text-white py-2 rounded shadow">Submit Request</button>
+            {selectableLeaveTypes.length === 0 && (
+              <p className="text-xs text-amber-600">
+                No leave balances found for {selectedYear}. Please contact HR to allocate yearly balance.
+              </p>
+            )}
+            <button type="submit" className="w-full bg-primary text-white py-2 rounded shadow disabled:opacity-60" disabled={selectableLeaveTypes.length === 0}>Submit Request</button>
           </form>
         </div>
       )}

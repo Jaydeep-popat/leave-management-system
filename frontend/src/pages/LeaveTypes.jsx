@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import api from '../api/axios';
 
 export default function LeaveTypes() {
@@ -14,8 +15,10 @@ export default function LeaveTypes() {
 
   const fetchLeaveTypes = async () => {
     try {
-      const { data } = await api.get('/leave-types?isActive=false');
-      setLeaveTypes(data.data?.leaveTypes || data.data || []);
+      // Remove isActive parameter to get active types by default (backend default behavior)
+      // Note: To get ALL types (active + inactive), backend would need to support that explicitly
+      const { data } = await api.get('/leave-types');
+      setLeaveTypes(data.data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -28,15 +31,17 @@ export default function LeaveTypes() {
     try {
       if (isEditing) {
         await api.patch(`/leave-types/${isEditing}`, formData);
+        toast.success('Leave type updated successfully');
       } else {
         await api.post('/leave-types', formData);
+        toast.success('Leave type created successfully');
       }
       setShowMod(false);
       setIsEditing(null);
       setFormData({ name: '', maxDaysPerYear: 0, carryForwardAllowed: false, description: '' });
       fetchLeaveTypes();
     } catch (err) {
-      alert(err.response?.data?.message || err.response?.data?.errors?.[0] || 'Error saving type');
+      toast.error(err.response?.data?.message || err.response?.data?.errors?.[0] || 'Error saving type');
     }
   };
 
@@ -49,9 +54,10 @@ export default function LeaveTypes() {
   const handleToggle = async (id) => {
     try {
       await api.patch(`/leave-types/${id}/toggle-status`);
+      toast.success('Leave type status updated');
       fetchLeaveTypes();
     } catch (err) {
-      alert(err.response?.data?.message || 'Error toggling');
+      toast.error(err.response?.data?.message || 'Error toggling');
     }
   };
 
@@ -59,9 +65,10 @@ export default function LeaveTypes() {
     if (!confirm("Delete this leave type permanently?")) return;
     try {
       await api.delete(`/leave-types/${id}`);
+      toast.success('Leave type deleted successfully');
       fetchLeaveTypes();
     } catch (err) {
-      alert(err.response?.data?.message || 'Error deleting');
+      toast.error(err.response?.data?.message || 'Error deleting');
     }
   };
 

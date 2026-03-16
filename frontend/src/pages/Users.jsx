@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import api from '../api/axios';
 
 export default function Users() {
@@ -24,9 +25,10 @@ export default function Users() {
     try {
       const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
       await api.patch(`/users/${id}/status`, { status: newStatus });
+      toast.success(`User status updated to ${newStatus}`);
       fetchUsers(); // Refresh
     } catch (err) {
-      alert(err.response?.data?.message || 'Error occurred');
+      toast.error(err.response?.data?.message || 'Error occurred');
     }
   };
 
